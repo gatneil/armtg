@@ -1,0 +1,25 @@
+#header {
+    margin: 0 auto;
+    text-align: center;
+    font-family: 'Roboto', sans-serif;    
+}
+
+#subheader {
+    margin: 0 auto;
+    text-align: center;
+    font-family: 'Raleway', sans-serif;
+}
+
+#root {
+    margin: 0 auto;
+    text-align: center;
+    font-family: 'Raleway', sans-serif;
+}
+
+.card {
+    text-align: left;
+}
+
+.left {
+    text-align: left;
+}
