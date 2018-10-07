@@ -6,22 +6,22 @@ Motivation
 
 ARM Templates are great, but editing JSON by hand is annoying and error-prone. This ARM Template generator helps with the initial skeleton of the ARM template but leaves the finer details to you. Specifically, this single-page, client-side web site does the following:
 
-    * allow you to add common resources to your template
-    * autogenerate dependent resources if desired
-    * autopopulate dropdowns with resources you already have in your template
-    * add dependency information in the template to avoid race conditions
-    * put resource references in the right place (can't remember what virtual machine property is used to reference your network interface? neither can I, but the tool can!)
+* allow you to add common resources to your template
+* autogenerate dependent resources if desired
+* autopopulate dropdowns with resources you already have in your template
+* add dependency information in the template to avoid race conditions
+* put resource references in the right place (can't remember what virtual machine property is used to reference your network interface? neither can I, but the tool can!)
 
 This site does NOT do the following:
 
-     * allow you to configure the details of each resource
+* allow you to configure the details of each resource
 
 
 Related Projects
 ----------------
 
-	* [azurerm](https://github.com/gbowerman/azurerm) is an easy to use python wrapper around the ARM REST API.
-	* [Azure Lists](https://negatblog.blob.core.windows.net/lists/meta_list) is a place where I dump lists of things I commonly look up in Azure (OS images, extensions, etc.). These lists refresh periodically, so check the timestamp at the top of the list to make sure the list is recent.
+* [azurerm](https://github.com/gbowerman/azurerm) is an easy to use python wrapper around the ARM REST API.
+*  [Azure Lists](https://negatblog.blob.core.windows.net/lists/meta_list) is a place where I dump lists of things I commonly look up in Azure (OS images, extensions, etc.). These lists refresh periodically, so check the timestamp at the top of the list to make sure the list is recent.
 
 
 License
