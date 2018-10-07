@@ -1,5 +1,5 @@
-# ARM Template Generator
-
+ ARM Template Generator
+=======================
 
 Motivation
 ----------
