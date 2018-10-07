@@ -328,7 +328,6 @@ class ArmTemplateGenerator extends React.Component {
     }
 
     generateTemplate() {
-	// TODO location variable
 	// TODO add subnets to vnets
 	// TODO if have VM or VMSS resource, add adminUsername and adminPassword parameters
 	var template = {"variables": {"location": "westus"}, 'resources': []}
