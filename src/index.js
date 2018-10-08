@@ -344,7 +344,6 @@ class ArmTemplateGenerator extends React.Component {
 	var template = {"variables": {"location": "westus"}, "resources": []}
 	
 	Object.keys(newResourcesObj).map((resourceId, index) => {
-	    console.log(newResourcesObj[resourceId]['canonicalType']);
 	    if (newResourcesObj[resourceId]['canonicalType'] == 'subnet') {
 		var vnetDependencyValue = newResourcesObj[resourceId]['requiredDependencyValues'][0];
 		if (vnetDependencyValue == 'autogen') {
@@ -360,9 +359,7 @@ class ArmTemplateGenerator extends React.Component {
 		    newResourcesObj[vnetDependencyValue]['templateSnippet']['properties']['subnets'].push({'name': newResourcesObj[resourceId]['name'], 'properties': {'addressPrefix': addressPrefix}});
 		}
 	    } else if (newResourcesObj[resourceId]['canonicalType'] == 'vm' || newResourcesObj[resourceId]['canonicalType'] == 'vmss') {
-		console.log('saw vm or vmss');
 		if (!('parameters' in template)) {
-		    console.log('adding parameters proprty to template');
 		    template['parameters'] = {}
 		}
 
@@ -379,8 +376,18 @@ class ArmTemplateGenerator extends React.Component {
 	    }
 	});
 
+	// reorder top-level template properties to the canonical ordering of
+	// parameters, variables, then resources (no outputs)
+	var orderedTemplate = {};
+	if ('parameters' in template) {
+	    orderedTemplate['parameters'] = template['parameters'];
+	}
+	
+	orderedTemplate['variables'] = template['variables'];
+	orderedTemplate['resources'] = template['resources'];
+
 	this.setState({
-	    template: JSON.stringify(template, null, 2)
+	    template: JSON.stringify(orderedTemplate, null, 2)
 	});
     }
 
