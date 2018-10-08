@@ -197,7 +197,6 @@ const resourceTypes = {
 	'shorthand': 'LB',
 	'count': 0, // name, properties.frontendIPConfigurations.name, same.properties.publicIPAddress.id
 	'optionalDependencyTypes': ['subnet', 'pip'],
-	// TODO add pseudo-round-robit LB rule on port 80
 	'templateSnippet': {
 	    "type": "Microsoft.Network/loadBalancers",
 	    "location": "[variables('location')]",
