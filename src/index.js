@@ -27,6 +27,7 @@ const resourceTypes = {
 	    "apiVersion": "2017-04-01",
 	    "type": "Microsoft.Network/virtualNetworks",
 	    "location": "[variables('location')]",
+	    "dependsOn": [],
 	    "properties": {
 		"addressSpace": {
 		    "addressPrefixes": [
@@ -50,6 +51,7 @@ const resourceTypes = {
 	    "apiVersion": "2017-04-01",
 	    "type": "Microsoft.Network/publicIPAddresses",
 	    "location": "[variables('location')]",
+	    "dependsOn": [],
 	    "properties": {
 		"publicIPAllocationMethod": "Dynamic"
 	    }
@@ -65,6 +67,7 @@ const resourceTypes = {
 	    "apiVersion": "2017-04-01",
 	    "type": "Microsoft.Network/networkInterfaces",
 	    "location": "[variables('location')]",
+	    "dependsOn": [],
 	    "properties": {
 		"ipConfigurations": [
 		    {
@@ -89,6 +92,7 @@ const resourceTypes = {
 		"name": "Standard"
 	    },
 	    "kind": "Storage",
+	    "dependsOn": [],
 	    "properties": {}
 	}
     },
@@ -102,6 +106,7 @@ const resourceTypes = {
 	    "apiVersion": "2017-03-30",
 	    "type": "Microsoft.Compute/virtualMachines",
 	    "location": "[variables('location')]",
+	    "dependsOn": [],
 	    "properties": {
 		"hardwareProfile": {
 		    "vmSize": "StandardD1_v2"
@@ -144,6 +149,7 @@ const resourceTypes = {
 		"tier": "Standard",
 		"capacity": "2"
 	    },
+	    "dependsOn": [],
 	    "properties": {
 		"overprovision": "false",
 		"upgradePolicy": {
@@ -201,6 +207,7 @@ const resourceTypes = {
 	    "type": "Microsoft.Network/loadBalancers",
 	    "location": "[variables('location')]",
 	    "apiVersion": "2017-04-01",
+	    "dependsOn": [],
 	    "properties": {
 		"frontendIPConfigurations": [],
 		"backendAddressPools": [
@@ -336,20 +343,26 @@ class ArmTemplateGenerator extends React.Component {
     }
 
     generateTemplate() {
-	// for simplicity of UI, subnets are treated as resources in the UI,
-	// but in an ARM template they're actually just config on a virtual network;
-	// thus, before generating virtual network resources, we add the subnet configs
-	// to the relevant virtual network template snippets
+
 	var newResourcesObj = cloneDeep(this.state.resources);
 	var template = {"variables": {"location": "westus"}, "resources": []}
-	
+	var subnetToVnetMap = {};
+
+	// rearrange specific properties
 	Object.keys(newResourcesObj).map((resourceId, index) => {
 	    if (newResourcesObj[resourceId]['canonicalType'] == 'subnet') {
+		// for simplicity of UI, subnets are treated as resources in the UI,
+		// but in an ARM template they're actually just config on a virtual network;
+		// thus, before generating virtual network resources, we add the subnet configs
+		// to the relevant virtual network template snippets
+		
 		var vnetDependencyValue = newResourcesObj[resourceId]['requiredDependencyValues'][0];
 		if (vnetDependencyValue == 'autogen') {
 		    alert("autogenTemplateSnippet not yet implemented!");
 		} else {
-		    // if not autogen, then the virtual network object already exists
+		    // if not autogen, then the virtual network object already exists, and
+		    // vnetDependencyValue is the full resource ID of the virtual network
+		    subnetToVnetMap[resourceId] = vnetDependencyValue;
 		    var subnetNumber = parseInt(newResourcesObj[resourceId]['name'].replace('subnet', ''));
 		    var addressPrefix = '10.' + subnetNumber.toString() + '.0.0/16';
 		    if (!('subnets' in newResourcesObj[vnetDependencyValue]['templateSnippet']['properties'])) {
@@ -362,15 +375,46 @@ class ArmTemplateGenerator extends React.Component {
 		if (!('parameters' in template)) {
 		    template['parameters'] = {}
 		}
-
+		
 		template['parameters']['adminUsername'] = {"type": "string"};
 		template['parameters']['adminPassword'] = {"type": "securestring"};
 	    }
 	});
-	
-	// TODO add dependsOn clauses
-	
+
+	// add dependsOn clauses to avoid race conditions
 	Object.keys(newResourcesObj).map((resourceId, index) => {
+	    dependencyConstraints.map((dependencyConstraint, dependencyConstraintIndex) => {
+		var constraintValueString = dependencyConstraint + 'DependencyValues';
+		var constraintTypeString = dependencyConstraint + 'DependencyTypes';
+		if (constraintValueString in newResourcesObj[resourceId]) {
+		    newResourcesObj[resourceId][constraintValueString].map((dependencyValue, dependencyIndex) => {
+			if (dependencyValue == 'none') {
+			    return;
+			} else if (dependencyValue == 'autogen') {
+			    alert('autogen is TBD');
+			} else {
+			    // dependencyValue is the full resource ID of the dependency
+			    if (newResourcesObj[resourceId][constraintTypeString][dependencyIndex] == 'subnet') {
+				// the dependsOn actually points to the vnet, not the subnet
+				newResourcesObj[resourceId]['templateSnippet']['dependsOn'].push(subnetToVnetMap[dependencyValue]);
+			    } else {
+				if ('templateSnippet' in newResourcesObj[resourceId]) {
+				    newResourcesObj[resourceId]['templateSnippet']['dependsOn'].push(dependencyValue);
+				}
+
+				// NOTE: this particular if-condition is basically another check to handle subnets properly;
+				// there's probably a better way to organize generateTemplate() overall
+			    }
+			}
+		    });
+		}
+	    });
+	});
+	
+	// add the resource blocks to the template
+	Object.keys(newResourcesObj).map((resourceId, index) => {
+	    // lack of 'templateSnippet' in a resource indicates that it isn't a top-level resource, so
+	    // it doesn't need to be added separately; it's already handled by a different resource
 	    if ('templateSnippet' in newResourcesObj[resourceId]) {
 		template['resources'].push(newResourcesObj[resourceId]['templateSnippet']);
 	    }
