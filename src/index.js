@@ -341,14 +341,17 @@ class ArmTemplateGenerator extends React.Component {
 	// thus, before generating virtual network resources, we add the subnet configs
 	// to the relevant virtual network template snippets
 	var newResourcesObj = cloneDeep(this.state.resources);
-	Object.keys(this.state.resources).map((resourceId, index) => {
-	    if (this.state.resources[resourceId]['canonicalType'] == 'subnet') {
-		var vnetDependencyValue = this.state.resources[resourceId]['requiredDependencyValues'][0];
+	var template = {"variables": {"location": "westus"}, "resources": []}
+	
+	Object.keys(newResourcesObj).map((resourceId, index) => {
+	    console.log(newResourcesObj[resourceId]['canonicalType']);
+	    if (newResourcesObj[resourceId]['canonicalType'] == 'subnet') {
+		var vnetDependencyValue = newResourcesObj[resourceId]['requiredDependencyValues'][0];
 		if (vnetDependencyValue == 'autogen') {
 		    alert("autogenTemplateSnippet not yet implemented!");
 		} else {
 		    // if not autogen, then the virtual network object already exists
-		    var subnetNumber = parseInt(this.state.resources[resourceId]['name'].replace('subnet', ''));
+		    var subnetNumber = parseInt(newResourcesObj[resourceId]['name'].replace('subnet', ''));
 		    var addressPrefix = '10.' + subnetNumber.toString() + '.0.0/16';
 		    if (!('subnets' in newResourcesObj[vnetDependencyValue]['templateSnippet']['properties'])) {
 			newResourcesObj[vnetDependencyValue]['templateSnippet']['properties']['subnets'] = [];
@@ -356,13 +359,20 @@ class ArmTemplateGenerator extends React.Component {
 		    
 		    newResourcesObj[vnetDependencyValue]['templateSnippet']['properties']['subnets'].push({'name': newResourcesObj[resourceId]['name'], 'properties': {'addressPrefix': addressPrefix}});
 		}
+	    } else if (newResourcesObj[resourceId]['canonicalType'] == 'vm' || newResourcesObj[resourceId]['canonicalType'] == 'vmss') {
+		console.log('saw vm or vmss');
+		if (!('parameters' in template)) {
+		    console.log('adding parameters proprty to template');
+		    template['parameters'] = {}
+		}
+
+		template['parameters']['adminUsername'] = {"type": "string"};
+		template['parameters']['adminPassword'] = {"type": "securestring"};
 	    }
 	});
 	
-	// TODO if have VM or VMSS resource, add adminUsername and adminPassword parameters
 	// TODO add dependsOn clauses
-
-	var template = {"variables": {"location": "westus"}, 'resources': []}
+	
 	Object.keys(newResourcesObj).map((resourceId, index) => {
 	    if ('templateSnippet' in newResourcesObj[resourceId]) {
 		template['resources'].push(newResourcesObj[resourceId]['templateSnippet']);
