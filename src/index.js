@@ -56,7 +56,6 @@ const resourceTypes = {
 	'count': 0,
 	'requiredDependencyTypes': ['vnet'],
 	'autogen': (name) => {
-	    console.log('called autogen!')
 	    var fullVnetSnippet = resourceTypes['vnet'].autogen(getUniqueObjectName('vnet'));
 	    fullVnetSnippet['properties']['subnets'] = {'name': 'subnet', 'properties': {'addressPrefix': '10.0.0.0/16'}};
 	    var vnetId = resourceTypes['vnet']['fullType'] + '/' + fullVnetSnippet['name'];
@@ -77,6 +76,12 @@ const resourceTypes = {
 	    "properties": {
 		"publicIPAllocationMethod": "Dynamic"
 	    }
+	},
+	'autogen': (name) => {
+	    var fullSnippet = cloneDeep(resourceTypes['pip']['templateSnippet']);
+	    fullSnippet['name'] = name;
+	    var resourceId = fullSnippet['type'] + '/' + name;
+	    return {"dependencyResourceId": resourceId, "resourceId": resourceId, "resources": [fullSnippet]};
 	}
     },
     'nic': {
