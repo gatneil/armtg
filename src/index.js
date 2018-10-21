@@ -89,7 +89,7 @@ const resourceTypes = {
 	'shorthand': 'NIC',
 	'count': 0, //properties.ipConfigurations[0].properties.publicIPAddress.id, same.subnet.id
 	'requiredDependencyTypes': ['subnet'],
-	'optionalDependencyTypes': ['pip', 'lb', 'appgw'],
+	'optionalDependencyTypes': ['pip', 'lb'/*, 'appgw'*/],
 	'templateSnippet':     {
 	    "apiVersion": "2017-04-01",
 	    "type": "Microsoft.Network/networkInterfaces",
@@ -188,7 +188,7 @@ const resourceTypes = {
 	'shorthand': 'VMSS',
 	'count': 0, // name, properties.virtualMachineProfile.osProfile.computerNamePrefix, properties.virtualMachineProfile.networkProfile,networkInterfaceConfigurations[0].properties.ipCOnfigurations[0].properties.subnet.id, same.loadBalancerBackendAddressPools[0].id, same.loadBalancerInboundNatPools[0].id
 	'requiredDependencyTypes': ['subnet'],
-	'optionalDependencyTypes': ['lb', 'appgw', 'boot_diagnostics_sa'],
+	'optionalDependencyTypes': ['lb', /*'appgw',*/ 'boot_diagnostics_sa'],
 	'templateSnippet': {
 	    "apiVersion": "2017-03-30",
 	    "type": "Microsoft.Compute/virtualMachineScaleSets",
@@ -281,14 +281,106 @@ const resourceTypes = {
 		    }
 		]
 	    }
+	},
+	'autogen': (name) => {
+	    var fullSnippet = cloneDeep(resourceTypes['lb']['templateSnippet']);
+	    fullSnippet['name'] = name;
+	    fullSnippet['properties']['frontendIPConfigurations'].push({'name': name + 'IPConfig'});
+	    var resourceId = fullSnippet['type'] + '/' + name;
+	    return {"dependencyResourceId": resourceId, "resourceId": resourceId, "resources": [fullSnippet]};
 	}
-    }//,
-//	'appgw': {
-//j	'fullType': 'Microsoft.Network/ApplicationGateways',
-//	'shorthand': 'APPGW',
-//	'count': 0,
-//	'optionalDependencyTypes': ['subnet', 'pip']
-//    }
+    }/*,
+    'appgw': {
+	'fullType': 'Microsoft.Network/ApplicationGateways',
+	'shorthand': 'APPGW',
+	'count': 0,
+	'optionalDependencyTypes': ['subnet', 'pip'],
+	'templateSnippet': { // name, properties.gatewayIPConfigurations[0].properties.subnet.id, properties.frontendIPConfigurations[0].properties.publicIPAddress.id, same.subnet.id?, properties.httpListeners[0].properties.ForntendIPConfiguration.id, same.FrontendPort.id, properties.requestRoutingRules.[0].properties.httpListener.id, same.backendAddressPool.id, same.backendHttpSettings.id (backendHttpSettingsCollection/appGwBackendHttpSettings)
+	    "type": "Microsoft.Network/applicationGateways",
+	    "name": null,
+	    "location": "[resourceGroup().location]",
+	    "apiVersion": "2017-04-01",
+	    "dependsOn": [],
+	    "properties": {
+		"sku": {
+		    "name": "Standard_Small",
+		    "tier": "Standard",
+		    "capacity": "2"
+		},
+		"gatewayIPConfigurations": [
+		    {
+			"name": "appGwIpConfig",
+			"properties": {
+			    "subnet": {
+				"id": null
+			    }
+			}
+		    }
+		],
+		"frontendIPConfigurations": [
+		    {
+			"name": "frontendIPConfiguration"
+		    }
+		],
+		"frontendPorts": [
+		    {
+			"name": "appGwFrontendPort",
+			"properties": {
+			    "Port": 80
+			}
+		    }
+		],
+		"backendAddressPools": [
+		    {
+			"name": "backendAddressPool"
+		    }
+		],
+		"backendHttpSettingsCollection": [
+		    {
+			"name": "appGwBackendHttpSettings",
+			"properties": {
+			    "Port": 80,
+			    "Protocol": "Http",
+			    "CookieBasedAffinity": "Disabled"
+			}
+		    }
+		],
+		"httpListeners": [
+		    {
+			"name": "appGwHttpListener",
+			"properties": {
+			    "FrontendIPConfiguration": {
+				"Id": null
+			    },
+			    "FrontendPort": {
+				"Id": null
+			    },
+			    "Protocol": "Http",
+			    "SslCertificate": null
+			}
+		    }
+		],
+		"requestRoutingRules": [
+		    {
+			"Name": "routingRule",
+			"properties": {
+			    "RuleType": "Basic",
+			    "httpListener": {
+				"id": "[concat(variables('appGwID'), '/httpListeners/appGwHttpListener')]"
+			    },
+			    "backendAddressPool": {
+				"id": "[concat(variables('appGwID'), '/backendAddressPools/', variables('appGwBePoolName'))]"
+			    },
+			    "backendHttpSettings": {
+				"id": "[concat(variables('appGwID'), '/backendHttpSettingsCollection/appGwBackendHttpSettings')]"
+			    }
+			}
+		    }
+		]
+	    }
+	}
+    }
+     */
 }
 
 // NOTE: modifies the resource type count
